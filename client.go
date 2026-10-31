@@ -58,6 +58,7 @@ type searchParams struct {
 	Country   string
 	Status    string
 	MediaType string
+	Sort      string
 	PageSize  int
 	SessionID string
 	Collation string
@@ -183,7 +184,7 @@ func (c *client) payload(p searchParams, cursor string) url.Values {
 		"startDate":              nil,
 		"v":                      c.token("v", "fbece7"),
 		"viewAllPageID":          "0",
-		"sortData":               map[string]string{"direction": "DESCENDING", "mode": "SORT_BY_TOTAL_IMPRESSIONS"},
+		"sortData":               map[string]string{"direction": p.Sort, "mode": "SORT_BY_TOTAL_IMPRESSIONS"},
 	}
 	if cursor != "" {
 		variables["cursor"] = cursor

@@ -36,7 +36,7 @@ adlib -q "nike" -c US -n 1000 -o nike.jsonl
 | `-status` | `ALL` | `ACTIVE`, `INACTIVE`, or `ALL` |
 | `-o` | `-` | Output file; `-` writes to stdout |
 | `-proxy` | `$ADLIB_PROXY` | Proxy URL, e.g. `http://user:pass@host:port` |
-| `-split` | `true` | Crawl several slices of the results in parallel |
+| `-split` | `true` | Crawl 16 slices of the results in parallel; `false` uses a single chain |
 | `-rotations` | `10` | Fresh sessions allowed per slice after a rate limit or error |
 | `-page` | `30` | Ads requested per call (Meta currently returns at most 10) |
 
@@ -81,7 +81,7 @@ sequenceDiagram
 1. **Session.** The tool loads the logged-out Facebook homepage. The response sets session cookies, and its HTML contains the `lsd` anti-forgery token plus a few build and session values. The Ad Library page itself blocks non-browser clients, but the homepage does not.
 2. **Search.** It sends the same GraphQL request the Ad Library website sends when you scroll: `AdLibrarySearchPaginationQuery`, with your query, country and status as variables.
 3. **Paging.** Each response returns a batch of ads and a cursor. The next request passes that cursor to get the following batch.
-4. **Parallel slices.** One cursor chain can only go as fast as one request at a time. With `-split`, the search is divided into separate slices (active or inactive × image, video, meme or no media), and each slice runs its own chain on its own connection at the same time. The results are combined and duplicates removed by `ad_archive_id`.
+4. **Parallel slices.** One cursor chain can only go as fast as one request at a time. By default the search is divided into 16 slices: active or inactive × image, video, meme or no media × highest or lowest impressions first. Each slice runs its own chain on its own connection at the same time. The results are combined and duplicates removed by `ad_archive_id`, so overlap between the two sort directions costs nothing.
 5. **Rate limits.** Meta reports a rate limit as GraphQL error `1675004`. The affected slice drops its connection, starts a fresh session, and retries the same cursor.
 
 ## Limits

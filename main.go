@@ -16,7 +16,10 @@ import (
 	"time"
 )
 
-var mediaTypes = []string{"IMAGE", "VIDEO", "MEME", "NONE"}
+var (
+	mediaTypes     = []string{"IMAGE", "VIDEO", "MEME", "NONE"}
+	sortDirections = []string{"DESCENDING", "ASCENDING"}
+)
 
 type config struct {
 	params       searchParams
@@ -52,7 +55,7 @@ func parseFlags() (config, error) {
 	flag.StringVar(&proxy, "proxy", os.Getenv("ADLIB_PROXY"), "proxy URL http://user:pass@host:port (rotating recommended)")
 	flag.StringVar(&cfg.output, "o", "-", "output JSONL file, - for stdout")
 	flag.IntVar(&cfg.maxRotations, "rotations", 10, "maximum fresh sessions per slice after rate limits or errors")
-	flag.BoolVar(&cfg.split, "split", true, "crawl media type and status slices in parallel")
+	flag.BoolVar(&cfg.split, "split", true, "crawl status, media type and sort direction slices in parallel")
 	flag.Parse()
 
 	if cfg.params.Query == "" {
@@ -61,6 +64,7 @@ func parseFlags() (config, error) {
 	cfg.params.Country = strings.ToUpper(cfg.params.Country)
 	cfg.params.Status = strings.ToUpper(cfg.params.Status)
 	cfg.params.MediaType = "ALL"
+	cfg.params.Sort = "DESCENDING"
 	cfg.params.PageSize = min(max(cfg.params.PageSize, 1), 30)
 	if proxy != "" {
 		u, err := url.Parse(proxy)
@@ -83,10 +87,13 @@ func slices(cfg config) []searchParams {
 	var out []searchParams
 	for _, status := range statuses {
 		for _, media := range mediaTypes {
-			p := cfg.params
-			p.Status = status
-			p.MediaType = media
-			out = append(out, p)
+			for _, sort := range sortDirections {
+				p := cfg.params
+				p.Status = status
+				p.MediaType = media
+				p.Sort = sort
+				out = append(out, p)
+			}
 		}
 	}
 	return out
@@ -134,7 +141,7 @@ func run(ctx context.Context, cfg config) error {
 }
 
 func crawl(ctx context.Context, cfg config, p searchParams, pages chan<- []json.RawMessage) {
-	name := p.Status + "/" + p.MediaType
+	name := p.Status + "/" + p.MediaType + "/" + p.Sort
 	p.SessionID = newUUID()
 	p.Collation = newUUID()
 
