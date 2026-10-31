@@ -4,11 +4,11 @@ A small, fast command-line tool that collects ads from the [Meta Ad Library](htt
 
 It writes one ad per line as JSON (JSONL), so you can stop it at any time and keep everything collected so far.
 
-In a test run, collecting 1,000 ads for `nike` in the US took 62 seconds through a rotating residential proxy.
+In a test run, collecting 1,000 ads for `nike` in the US took 50 seconds through a rotating residential proxy.
 
 ## Install
 
-Requires Go 1.25 or newer.
+Requires Go 1.27 or newer.
 
 ```bash
 go install github.com/simonbalfe/adlib@latest
@@ -78,6 +78,7 @@ sequenceDiagram
     end
 ```
 
+1. **Browser identity.** Each session picks a real browser at random (Chrome on macOS or Windows, Firefox, or Safari) using [tls-client](https://github.com/bogdanfinn/tls-client). Its TLS handshake, HTTP/2 settings, header order and `user-agent` all match that browser, so the connection looks like the browser the headers claim to be.
 1. **Session.** The tool loads the logged-out Facebook homepage. The response sets session cookies, and its HTML contains the `lsd` anti-forgery token plus a few build and session values. The Ad Library page itself blocks non-browser clients, but the homepage does not.
 2. **Search.** It sends the same GraphQL request the Ad Library website sends when you scroll: `AdLibrarySearchPaginationQuery`, with your query, country and status as variables.
 3. **Paging.** Each response returns a batch of ads and a cursor. The next request passes that cursor to get the following batch.
